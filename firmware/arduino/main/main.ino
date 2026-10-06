@@ -2,7 +2,7 @@
 #include <WebServer.h>
 #include <LittleFS.h>
 
-const char* ssid = "OI_7C96";
+const char* ssid = "Oi_7C96";
 const char* password = "A4vP6PEQ";
 
 WebServer server(80);
