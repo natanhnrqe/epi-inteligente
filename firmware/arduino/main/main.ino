@@ -28,8 +28,14 @@ Adafruit_MPU6050 mpu;
 
 // BUZZER
 const int BUZZER_PIN = 15;
-
+const int BUZZER_PIN = 25;
+const int BUZZER_FREQ = 2000;
+const int BUZZER_CHANNEL = 0;
+const int BUZZER_RESOLUTION = 8;
 bool buzzerAtivo = false;
+
+
+
 
 
 // ============================================================
@@ -153,7 +159,7 @@ void handleStatus() {
     json += aceleracaoZ;
 
     json += "},";
-    
+
     // GIROSCÓPIO
     json += "\"gyroscope\":{";
 
@@ -188,35 +194,20 @@ void handleBuzzerOn() {
 
     buzzerAtivo = true;
 
-    digitalWrite(
-        BUZZER_PIN,
-        HIGH
-    );
+    ledcWrite(BUZZER_CHANNEL, 128);
 
-
-    server.send(
-        200,
-        "application/json",
-        "{\"buzzer\":true}"
-    );
+    server.send(200, "application/json",
+                "{\"buzzer\":true}");
 }
-
 
 void handleBuzzerOff() {
 
     buzzerAtivo = false;
 
-    digitalWrite(
-        BUZZER_PIN,
-        LOW
-    );
+    ledcWrite(BUZZER_CHANNEL, 0);
 
-
-    server.send(
-        200,
-        "application/json",
-        "{\"buzzer\":false}"
-    );
+    server.send(200, "application/json",
+                "{\"buzzer\":false}");
 }
 
 
@@ -323,7 +314,10 @@ void setup() {
 
     pinMode(BUZZER_PIN, OUTPUT);
 
-    digitalWrite(BUZZER_PIN, LOW);
+    ledcSetup(BUZZER_CHANNEL, BUZZER_FREQ, BUZZER_RESOLUTION);
+    ledcAttachPin(BUZZER_PIN, BUZZER_CHANNEL);
+
+    ledcWrite(BUZZER_CHANNEL, 0);
 
     Serial.println("Buzzer configurado.");
 
