@@ -7,7 +7,7 @@
 #include <Adafruit_Sensor.h>
 
 const char* ssid = "Oi_7C96";
-const char* password = "SENHA_DA_REDE";
+const char* password = "Av4P6PEQ";
 
 
 
