@@ -7,7 +7,7 @@
 #include <Adafruit_Sensor.h>
 
 const char* ssid = "Oi_7C96";
-const char* password = "Av4P6PEQ";
+const char* password = "A4vP6PEQ";
 
 
 
@@ -28,7 +28,6 @@ Adafruit_MPU6050 mpu;
 
 // BUZZER
 const int BUZZER_PIN = 15;
-const int BUZZER_PIN = 25;
 const int BUZZER_FREQ = 2000;
 const int BUZZER_CHANNEL = 0;
 const int BUZZER_RESOLUTION = 8;
