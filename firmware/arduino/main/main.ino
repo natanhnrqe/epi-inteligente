@@ -5,11 +5,11 @@
 #include <Wire.h>
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
+#include <cmath>
 
-const char* ssid = "Oi_7C96";
-const char* password = "A4vP6PEQ";
-
-
+// Conectar WI-FI
+const char* ssid = "Visitantes";
+const char* password = "";
 
 WebServer server(80);
 
@@ -22,12 +22,17 @@ WebServer server(80);
 // SCL -> GPIO 22
 // VCC -> 3.3V
 // GND -> GND
-
+const int MPU_SDA = 21;
+const int MPU_SCL = 22;
 Adafruit_MPU6050 mpu;
+
+bool movimentoBrusco = false;
+const float LIMITE_MOVIMENTO_BRUSCO = 15.0;
 
 
 // BUZZER
 const int BUZZER_PIN = 15;
+const int BUZZER_PIN = 25;
 const int BUZZER_FREQ = 2000;
 const int BUZZER_CHANNEL = 0;
 const int BUZZER_RESOLUTION = 8;
@@ -53,8 +58,6 @@ float giroZ = 0.0;
 
 
 // ***BATERIA***
-
-
 // Bateria utilizada:
 //
 // 18650
@@ -78,7 +81,6 @@ float giroZ = 0.0;
 // Bateria -> divisor de tensão -> ADC do ESP32
 //
 // e então calculamos a tensão e a porcentagem.
-
 int bateria = 85;
 
 
@@ -89,21 +91,20 @@ int bateria = 85;
 //
 // Futuramente a gente substituir por um sensor/chave que
 // detecte se o capacete está sendo utilizado.
-
 bool capacete = true;
 
 
 void atualizarMPU() {
 
+    if (!mpu.begin()) {
+        return;
+    }
+
     sensors_event_t aceleracao;
     sensors_event_t giro;
     sensors_event_t temperatura;
 
-    mpu.getEvent(
-        &aceleracao,
-        &giro,
-        &temperatura
-    );
+    mpu.getEvent(&aceleracao, &giro, &temperatura);
 
     aceleracaoX = aceleracao.acceleration.x;
     aceleracaoY = aceleracao.acceleration.y;
@@ -112,6 +113,19 @@ void atualizarMPU() {
     giroX = giro.gyro.x;
     giroY = giro.gyro.y;
     giroZ = giro.gyro.z;
+
+    float magnitude = sqrt(aceleracaoX * aceleracaoX
+        + aceleracaoY * aceleracaoY
+        + aceleracaoZ * aceleracaoZ);
+
+    if (magnitude > LIMITE_MOVIMENTO_BRUSCO) {
+        movimentoBrusco = true;
+
+        Serial.println("Movimento brusco detectado!");
+
+        buzzerAtivo = true;
+        ledcWrite(BUZZER_CHANNEL, 128);
+    }
 }
 
 // API: /api/status
@@ -241,75 +255,45 @@ void handleRoot() {
 
 
 void handleCSS() {
-
-    File file = LittleFS.open(
-        "/style.css",
-        "r"
-    );
-
+    File file = LittleFS.open("/style.css", "r");
 
     if (!file) {
-
-        server.send(
-            404,
-            "text/plain",
-            "style.css nao encontrado"
-        );
-
+        server.send(404, "text/plain", "style.css nao encontrado");
         return;
     }
-
 
     server.streamFile(
         file,
         "text/css"
     );
-
-
     file.close();
 }
 
 void handleJS() {
-
     File file = LittleFS.open(
         "/script.js",
         "r"
     );
 
-
     if (!file) {
-
-        server.send(
-            404,
-            "text/plain",
-            "script.js nao encontrado"
-        );
-
+        server.send(404, "text/plain", "script.js nao encontrado");
         return;
     }
 
-
-    server.streamFile(
-        file,
-        "application/javascript"
-    );
-
+    server.streamFile(file, "application/javascript");
 
     file.close();
 }
 
 void setup() {
-
     Serial.begin(115200);
 
     delay(1000);
-
 
     Serial.println();
     Serial.println("=================================");
     Serial.println("       EPI INTELIGENTE");
     Serial.println("=================================");
-
 
     pinMode(BUZZER_PIN, OUTPUT);
 
@@ -320,190 +304,102 @@ void setup() {
 
     Serial.println("Buzzer configurado.");
 
-
     Serial.println("Iniciando I2C...");
 
-    Wire.begin(
-        21,
-        22
-    );
+    Wire.begin(MPU_SDA, MPU_SCL);
 
     Serial.println("Procurando MPU-6050...");
 
     if (!mpu.begin()) {
 
-        Serial.println(
-            "AVISO: MPU-6050 nao encontrado!"
-        );
+        Serial.println("AVISO: MPU-6050 nao encontrado!");
 
-        Serial.println(
-            "O sistema continuara funcionando."
-        );
+        Serial.println("O sistema continuara funcionando.");
 
-        Serial.println(
-            "Conecte o GY-521 e reinicie o ESP32."
-        );
+        Serial.println("Conecte o GY-521 e reinicie o ESP32.");
 
     } else {
+        Serial.println("MPU-6050 encontrado!");
 
-        Serial.println(
-            "MPU-6050 encontrado!"
-        );
+        mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
 
+        mpu.setGyroRange(MPU6050_RANGE_500_DEG);
 
-        mpu.setAccelerometerRange(
-            MPU6050_RANGE_8_G
-        );
+        mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
 
-        mpu.setGyroRange(
-            MPU6050_RANGE_500_DEG
-        );
-
-
-        mpu.setFilterBandwidth(
-            MPU6050_BAND_21_HZ
-        );
-
-
-        Serial.println(
-            "MPU-6050 configurado."
-        );
+        Serial.println("MPU-6050 configurado.");
     }
 
-    Serial.println(
-        "Iniciando LittleFS..."
-    );
+    Serial.println("Iniciando LittleFS...");
 
     if (!LittleFS.begin(true)) {
-
-        Serial.println(
-            "Erro ao iniciar LittleFS!"
-        );
-
+        Serial.println("Erro ao iniciar LittleFS!");
         return;
     }
 
-    Serial.println(
-        "LittleFS iniciado!"
-    );
+    Serial.println("LittleFS iniciado!");
 
-    Serial.print(
-        "Conectando ao Wi-Fi"
-    );
+    Serial.print("Conectando ao Wi-Fi");
 
+    WiFi.begin(ssid, password);
 
-    WiFi.begin(
-        ssid,
-        password
-    );
-
-
-    while (
-        WiFi.status() != WL_CONNECTED
-    ) {
-
+    while (WiFi.status() != WL_CONNECTED) {
         delay(500);
-
         Serial.print(".");
     }
 
-
     Serial.println();
 
-    Serial.println(
-        "Wi-Fi conectado!"
-    );
+    Serial.println("Wi-Fi conectado!");
 
+    Serial.print("IP do ESP32: ");
 
-    Serial.print(
-        "IP do ESP32: "
-    );
-
-    Serial.println(
-        WiFi.localIP()
-    );
+    Serial.println(WiFi.localIP());
 
 
     // ROTAS
-    server.on(
-        "/",
-        HTTP_GET,
-        handleRoot
-    );
+    server.on("/", HTTP_GET, handleRoot);
 
-    server.on(
-        "/style.css",
-        HTTP_GET,
-        handleCSS
-    );
+    server.on("/style.css", HTTP_GET, handleCSS);
 
-    server.on(
-        "/script.js",
-        HTTP_GET,
-        handleJS
-    );
+    server.on("/script.js", HTTP_GET, handleJS);
 
 
     // API de status geral
-    server.on(
-        "/api/status",
-        HTTP_GET,
-        handleStatus
-    );
+    server.on("/api/status", HTTP_GET, handleStatus);
 
 
     // Buzzer Ligado
-    server.on(
-        "/api/buzzer/on",
-        HTTP_POST,
-        handleBuzzerOn
-    );
+    server.on("/api/buzzer/on", HTTP_POST, handleBuzzerOn);
 
     // Buzzer Desligado
-    server.on(
-        "/api/buzzer/off",
-        HTTP_POST,
-        handleBuzzerOff
-    );
+    server.on("/api/buzzer/off", HTTP_POST, handleBuzzerOff);
 
     server.begin();
 
 
-    Serial.println(
-        "Servidor HTTP iniciado!"
-    );
+    Serial.println("Servidor HTTP iniciado!");
 
 
     Serial.println();
 
-    Serial.print(
-        "Dashboard: http://"
-    );
+    Serial.print("Dashboard: http://");
 
     Serial.println(
         WiFi.localIP()
     );
 
 
-    Serial.print(
-        "API: http://"
-    );
+    Serial.print("API: http://");
 
-    Serial.print(
-        WiFi.localIP()
-    );
+    Serial.print(WiFi.localIP());
 
-    Serial.println(
-        "/api/status"
-    );
-
+    Serial.println("/api/status");
 
     Serial.println(
         "================================="
     );
 }
-
-
 
 void loop() {
 
