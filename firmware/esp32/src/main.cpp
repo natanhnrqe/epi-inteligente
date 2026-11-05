@@ -1,63 +1,17 @@
-//
-// Created by JoyBoy on 05/10/2026.
-//
-#include <WiFi.h>
-#include <WebServer.h>
+#include <Arduino.h>
+#include "actuators/Buzzer.h"
 
-const char* ssid = "SEU_WIFI";
-const char* password = "SUA_SENHA";
+constexpr int BUZZER_PIN = 23;
 
-WebServer server(80);
-
-void handleStatus() {
-
-    int battery = 85;
-    bool helmet = true;
-
-    float gyroX = 0.2;
-    float gyroY = -0.1;
-    float gyroZ = 9.8;
-
-    String json = "{";
-    json += "\"battery\":" + String(battery) + ",";
-    json += "\"helmet\":" + String(helmet ? "true" : "false") + ",";
-    json += "\"gyro\":{";
-    json += "\"x\":" + String(gyroX) + ",";
-    json += "\"y\":" + String(gyroY) + ",";
-    json += "\"z\":" + String(gyroZ);
-    json += "}";
-    json += "}";
-
-    server.sendHeader("Access-Control-Allow-Origin", "*");
-    server.send(200, "application/json", json);
-}
+Buzzer buzzer(BUZZER_PIN);
 
 void setup() {
-
     Serial.begin(115200);
+    buzzer.begin();
 
-    WiFi.begin(ssid, password);
-
-    Serial.print("Conectando ao Wi-Fi");
-
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
-    }
-
-    Serial.println();
-    Serial.println("Wifi conectado!!!");
-
-    Serial.print("IP do ESP32: ");
-    Serial.println(WiFi.localIP());
-
-    server.on("/api/status", handleStatus);
-
-    server.begin();
-
-    Serial.println("Servidor rodando na porta 8080!!!!");
+    Serial.println("Sistema inicializado!");
 }
 
 void loop() {
-    server.handleClient();
+    buzzer.activate();
 }
