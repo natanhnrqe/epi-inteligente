@@ -8,11 +8,13 @@
 #include "displays/OledDisplay.h"
 #include "models/EmergencyProfile.h"
 #include "sensors/Mpu6050Sensor.h"
+#include "safety/FallDetector.h"
 
 // Buzzer
 constexpr int BUZZER_PIN = 23;
 Buzzer buzzer(BUZZER_PIN);
 AlertManager alerts(buzzer);
+FallDetector fallDetector(alerts);
 
 // OLED
 constexpr int OLED_SDA = 19;
@@ -117,44 +119,14 @@ void loop() {
     }
 
 
-    if (mpuReady) {
-        if (now - lastSensorRead >= SENSOR_INTERVAL) {
-            lastSensorRead = now;
+    if (mpuReady && now - lastSensorRead >= SENSOR_INTERVAL) {
+        lastSensorRead = now;
 
-            Mpu6050Data sensorData;
+        Mpu6050Data sensorData;
 
-            if (mpuSensor.readData(sensorData)) {
-
-                float magnitude = sqrtf(
-                    sensorData.accelerationX * sensorData.accelerationX +
-                    sensorData.accelerationY * sensorData.accelerationY +
-                    sensorData.accelerationZ * sensorData.accelerationZ
-                );
-
-                // Formato CSV para facilitar a análise dos dados.
-                Serial.print(now);
-                Serial.print(",");
-
-                Serial.print(sensorData.accelerationX);
-                Serial.print(",");
-                Serial.print(sensorData.accelerationY);
-                Serial.print(",");
-                Serial.print(sensorData.accelerationZ);
-                Serial.print(",");
-
-                Serial.print(sensorData.gyroscopeX);
-                Serial.print(",");
-                Serial.print(sensorData.gyroscopeY);
-                Serial.print(",");
-                Serial.print(sensorData.gyroscopeZ);
-                Serial.print(",");
-
-                Serial.print(sensorData.temperature);
-                Serial.print(",");
-
-                Serial.println(magnitude);
-            }
+        if (mpuSensor.readData(sensorData)) {
+            fallDetector.update(sensorData);
         }
     }
-
 }
+
