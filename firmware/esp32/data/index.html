@@ -1,0 +1,130 @@
+```html
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>EPI Inteligente</title>
+
+    <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+<header>
+    <h1>EPI Inteligente</h1>
+    <p>Monitoramento do equipamento em tempo real</p>
+</header>
+
+<main>
+    
+    <section class="cards">
+
+        <div class="card">
+            <h2>Bateria</h2>
+            <div id="battery">--%</div>
+        </div>
+
+        <div class="card">
+            <h2>Capacete</h2>
+            <div id="helmet">---</div>
+        </div>
+
+    </section>
+
+    <section class="sensor card">
+
+        <h2>Acelerômetro</h2>
+
+        <p class="unit">m/s²</p>
+
+        <div class="sensor-values">
+
+            <div>
+                <span>X</span>
+                <strong id="accel-x">--</strong>
+            </div>
+
+            <div>
+                <span>Y</span>
+                <strong id="accel-y">--</strong>
+            </div>
+
+            <div>
+                <span>Z</span>
+                <strong id="accel-z">--</strong>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <section class="sensor card">
+
+        <h2>Giroscópio</h2>
+
+        <p class="unit">rad/s</p>
+
+        <div class="sensor-values">
+
+            <div>
+                <span>X</span>
+                <strong id="gyro-x">--</strong>
+            </div>
+
+            <div>
+                <span>Y</span>
+                <strong id="gyro-y">--</strong>
+            </div>
+
+            <div>
+                <span>Z</span>
+                <strong id="gyro-z">--</strong>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <section class="card buzzer">
+
+        <h2>Alarme sonora</h2>
+
+        <div id="buzzer-status">
+            Buzzer desligado
+        </div>
+
+        <div class="buzzer-buttons">
+
+            <button
+                    id="buzzer-on"
+                    class="button button-on">
+                ACIONAR BUZZER
+            </button>
+
+            <button
+                    id="buzzer-off"
+                    class="button button-off">
+                PARAR BUZZER
+            </button>
+
+        </div>
+
+    </section>
+
+    <div id="connection">
+        ● Conectando ao ESP32...
+    </div>
+
+</main>
+
+<script src="/script.js"></script>
+
+</body>
+
+</html>
+
