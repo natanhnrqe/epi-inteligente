@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Funcionário · EPI Inteligente</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@500;600;700&display=swap">
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="nav">
+    <div class="nav-inner">
+        <div class="brand"><b>EPI</b><span>INTELIGENTE</span></div>
+        <nav class="nav-links">
+            <a href="/index.html">Dashboard</a>
+            <a href="/funcionario.html" class="active">Funcionário</a>
+        </nav>
+        <div class="nav-status">
+            <small>SERVIDOR LOCAL</small>
+            <span class="pill" id="nav-esp">ESP32 conectado</span>
+        </div>
+    </div>
+</header>
+
+<main>
+    <div class="page-head">
+        <div>
+            <p class="eyebrow">Perfil de emergência</p>
+            <h1>Cadastro do funcionário</h1>
+            <p class="lead">Informações essenciais para ajudar em uma situação de emergência.</p>
+        </div>
+        <p class="hint">* Campos obrigatórios</p>
+    </div>
+
+    <div class="form-layout">
+        <form class="card" id="employee-form" novalidate>
+            <div class="fieldset">
+                <div class="section-title"><i>01</i><h2>Dados do funcionário</h2></div>
+                <div class="field">
+                    <label for="nome">Nome completo <em>*</em></label>
+                    <input id="nome" name="nome" type="text" placeholder="Digite o nome completo" autocomplete="name" required>
+                    <span class="err" data-for="nome"></span>
+                </div>
+            </div>
+
+            <div class="fieldset">
+                <div class="section-title"><i>02</i><h2>Contato de emergência</h2></div>
+                <div class="row">
+                    <div class="field">
+                        <label for="contato_nome">Nome do contato <em>*</em></label>
+                        <input id="contato_nome" name="contato_nome" type="text" placeholder="Nome de quem deve ser avisado" required>
+                        <span class="err" data-for="contato_nome"></span>
+                    </div>
+                    <div class="field">
+                        <label for="contato_telefone">Telefone do contato <em>*</em></label>
+                        <input id="contato_telefone" name="contato_telefone" type="tel" inputmode="tel" placeholder="(00) 00000-0000" maxlength="15" required>
+                        <span class="err" data-for="contato_telefone"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="fieldset">
+                <div class="section-title"><i>03</i><h2>Informações de saúde</h2></div>
+                <div class="row">
+                    <div class="field">
+                        <label for="tipo_sanguineo">Tipo sanguíneo</label>
+                        <select id="tipo_sanguineo" name="tipo_sanguineo">
+                            <option value="">Selecione ou informe “Não sei”</option>
+                            <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+                            <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+                            <option>Não sei</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="alergias">Alergias</label>
+                        <input id="alergias" name="alergias" type="text" placeholder="Ex.: penicilina, látex ou nenhuma conhecida">
+                    </div>
+                </div>
+                <div class="field" style="margin-top:16px">
+                    <label for="observacoes">Observações</label>
+                    <textarea id="observacoes" name="observacoes" placeholder="Condições de saúde, medicamentos ou orientações importantes."></textarea>
+                </div>
+            </div>
+
+            <div class="form-foot">
+                <span class="hint" id="form-msg">Confira as informações antes de salvar.</span>
+                <div class="btns">
+                    <button type="reset" class="btn" id="btn-cancel">Cancelar</button>
+                    <button type="submit" class="btn primary" id="btn-save">Salvar cadastro</button>
+                </div>
+            </div>
+        </form>
+
+        <aside class="aside">
+            <div class="card">
+                <p class="tag">Informação que protege</p>
+                <h3>Um perfil pronto<br>para quando precisar.</h3>
+                <p>Mantenha os dados atualizados para facilitar o contato e apoiar o atendimento em uma emergência.</p>
+                <hr>
+                <h4>Não sabe o tipo sanguíneo?</h4>
+                <p class="hint">Selecione “Não sei”. Não preencha essa informação por suposição.</p>
+            </div>
+            <div class="card alt">
+                <h4>Dados sensíveis</h4>
+                <p>Use estas informações apenas para a segurança do funcionário e restrinja o acesso a pessoas autorizadas.</p>
+                <span class="hint">Revise o cadastro sempre que houver alterações.</span>
+            </div>
+        </aside>
+    </div>
+</main>
+
+<footer><div><span>EPI Inteligente &nbsp;/&nbsp; Perfil de emergência</span><span>Segurança começa com informação.</span></div></footer>
+
+<script src="/funcionario.js"></script>
+</body>
+</html>

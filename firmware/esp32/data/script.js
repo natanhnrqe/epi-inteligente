@@ -1,151 +1,86 @@
-
 const API_URL = "/api/status";
+const byId = (id) => document.getElementById(id);
+const fmt = (v) => Number(v).toLocaleString("pt-BR", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+let lastRead = null;
 
-async function updateDashboard() {
+function setConnection(ok) {
+    byId("connection").textContent = ok ? "Recebendo dados do ESP32" : "ESP32 desconectado";
+    byId("connection").classList.toggle("off", !ok);
+    byId("nav-esp").textContent = ok ? "ESP32 conectado" : "ESP32 desconectado";
+    byId("nav-esp").classList.toggle("off", !ok);
+    byId("system-pill").textContent = ok ? "Sistema online" : "Sistema offline";
+    byId("system-pill").classList.toggle("on", ok);
+    byId("system-pill").classList.toggle("off", !ok);
+}
 
-    try {
+function updateBattery(level) {
+    const n = Math.max(0, Math.min(100, Number(level)));
+    const bar = byId("battery-bar"), label = byId("battery-label");
+    byId("battery").textContent = n;
+    bar.style.width = n + "%";
+    let cls = "", text = "Nível adequado";
+    if (n < 20) { cls = "danger"; text = "Nível crítico"; }
+    else if (n < 50) { cls = "warn"; text = "Nível baixo"; }
+    bar.className = cls;
+    label.className = "bar-label " + cls;
+    label.textContent = text;
+}
 
-        const response = await fetch(API_URL);
-
-        if (!response.ok) {
-            throw new Error("Erro na resposta da API");
-        }
-
-        const data = await response.json();
-
-        document.getElementById("battery").textContent =
-            `${data.battery}%`;
-
-        document.getElementById("helmet").textContent =
-            data.helmet ? "OK" : "REMOVIDO";
-
-        document.getElementById("accel-x").textContent =
-            Number(data.accelerometer.x).toFixed(2);
-
-        document.getElementById("accel-y").textContent =
-            Number(data.accelerometer.y).toFixed(2);
-
-        document.getElementById("accel-z").textContent =
-            Number(data.accelerometer.z).toFixed(2);
-
-        document.getElementById("gyro-x").textContent =
-            Number(data.gyroscope.x).toFixed(2);
-
-        document.getElementById("gyro-y").textContent =
-            Number(data.gyroscope.y).toFixed(2);
-
-        document.getElementById("gyro-z").textContent =
-            Number(data.gyroscope.z).toFixed(2);
-
-
-        updateBuzzerStatus(data.buzzer);
-
-
-        document.getElementById("connection").textContent =
-            "● Conectado ao ESP32";
-
-    } catch (error) {
-
-        console.error(error);
-
-        document.getElementById("connection").textContent =
-            "● ESP32 desconectado";
-    }
+function updateHelmet(on) {
+    byId("helmet").textContent = on ? "Em uso" : "Removido";
+    byId("helmet-sub").textContent = on ? "Equipamento detectado" : "Equipamento não detectado";
+    const pill = byId("helmet-pill");
+    pill.textContent = on ? "Detectado" : "Não detectado";
+    pill.classList.toggle("on", on);
+    pill.classList.toggle("off", !on);
 }
 
 function updateBuzzerStatus(ativo) {
-
-    const status =
-        document.getElementById("buzzer-status");
-
-
-    if (ativo) {
-
-        status.textContent =
-            "🔊 Buzzer acionado";
-
-    } else {
-
-        status.textContent =
-            "🔇 Buzzer desligado";
-    }
+    byId("buzzer-status").textContent = ativo ? "Buzzer acionado" : "Buzzer desligado";
 }
 
-async function ligarBuzzer() {
+function updateLastRead() {
+    if (!lastRead) return;
+    const s = Math.round((Date.now() - lastRead) / 1000);
+    byId("last-read").textContent = "Última leitura: " + (s < 3 ? "agora" : `há ${s}s`);
+}
 
+async function updateDashboard() {
     try {
+        const response = await fetch(API_URL);
+        if (!response.ok) throw new Error("Erro na resposta da API");
+        const data = await response.json();
 
-        const response = await fetch(
-            "/api/buzzer/on",
-            {
-                method: "POST"
-            }
-        );
+        updateBattery(data.battery);
+        updateHelmet(Boolean(data.helmet));
+        ["x", "y", "z"].forEach((a) => {
+            byId("accel-" + a).textContent = fmt(data.accelerometer[a]);
+            byId("gyro-" + a).textContent = fmt(data.gyroscope[a]);
+        });
+        updateBuzzerStatus(data.buzzer);
 
-
-        if (!response.ok) {
-            throw new Error("Erro ao acionar buzzer");
-        }
-
-
-        updateBuzzerStatus(true);
-
+        lastRead = Date.now();
+        setConnection(true);
     } catch (error) {
-
         console.error(error);
-
-        alert("Não foi possível acionar o buzzer.");
+        setConnection(false);
     }
+    updateLastRead();
 }
 
-async function desligarBuzzer() {
-
+async function setBuzzer(on) {
     try {
-
-        const response = await fetch(
-            "/api/buzzer/off",
-            {
-                method: "POST"
-            }
-        );
-
-
-        if (!response.ok) {
-            throw new Error("Erro ao desligar buzzer");
-        }
-
-
-        updateBuzzerStatus(false);
-
+        const response = await fetch(`/api/buzzer/${on ? "on" : "off"}`, {method: "POST"});
+        if (!response.ok) throw new Error("Erro ao alterar buzzer");
+        updateBuzzerStatus(on);
     } catch (error) {
-
         console.error(error);
-
-        alert("Não foi possível desligar o buzzer.");
+        alert(on ? "Não foi possível acionar o buzzer." : "Não foi possível desligar o buzzer.");
     }
 }
 
-
-document
-    .getElementById("buzzer-on")
-    .addEventListener(
-        "click",
-        ligarBuzzer
-    );
-
-
-document
-    .getElementById("buzzer-off")
-    .addEventListener(
-        "click",
-        desligarBuzzer
-    );
-
+byId("buzzer-on").addEventListener("click", () => setBuzzer(true));
+byId("buzzer-off").addEventListener("click", () => setBuzzer(false));
 
 updateDashboard();
-
-setInterval(
-    updateDashboard,
-    1000
-);
-
+setInterval(updateDashboard, 1000);

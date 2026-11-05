@@ -1,130 +1,99 @@
-```html
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>EPI Inteligente</title>
-
+    <title>Dashboard · EPI Inteligente</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@500;600;700&display=swap">
     <link rel="stylesheet" href="/style.css">
 </head>
-
 <body>
-
-<header>
-    <h1>EPI Inteligente</h1>
-    <p>Monitoramento do equipamento em tempo real</p>
+<header class="nav">
+    <div class="nav-inner">
+        <div class="brand"><b>EPI</b><span>INTELIGENTE</span></div>
+        <nav class="nav-links">
+            <a href="/index.html" class="active">Dashboard</a>
+            <a href="/cadastro.html">Funcionário</a>
+        </nav>
+        <div class="nav-status">
+            <small>SERVIDOR LOCAL</small>
+            <span class="pill" id="nav-esp">ESP32 conectado</span>
+        </div>
+    </div>
 </header>
 
 <main>
-    
-    <section class="cards">
-
-        <div class="card">
-            <h2>Bateria</h2>
-            <div id="battery">--%</div>
+    <div class="page-head">
+        <div>
+            <p class="eyebrow">Visão geral</p>
+            <h1>Monitoramento do EPI</h1>
+            <p class="lead">Acompanhe o equipamento e os sensores em tempo real.</p>
         </div>
-
-        <div class="card">
-            <h2>Capacete</h2>
-            <div id="helmet">---</div>
-        </div>
-
-    </section>
-
-    <section class="sensor card">
-
-        <h2>Acelerômetro</h2>
-
-        <p class="unit">m/s²</p>
-
-        <div class="sensor-values">
-
-            <div>
-                <span>X</span>
-                <strong id="accel-x">--</strong>
-            </div>
-
-            <div>
-                <span>Y</span>
-                <strong id="accel-y">--</strong>
-            </div>
-
-            <div>
-                <span>Z</span>
-                <strong id="accel-z">--</strong>
-            </div>
-
-        </div>
-
-    </section>
-
-
-    <section class="sensor card">
-
-        <h2>Giroscópio</h2>
-
-        <p class="unit">rad/s</p>
-
-        <div class="sensor-values">
-
-            <div>
-                <span>X</span>
-                <strong id="gyro-x">--</strong>
-            </div>
-
-            <div>
-                <span>Y</span>
-                <strong id="gyro-y">--</strong>
-            </div>
-
-            <div>
-                <span>Z</span>
-                <strong id="gyro-z">--</strong>
-            </div>
-
-        </div>
-
-    </section>
-
-
-    <section class="card buzzer">
-
-        <h2>Alarme sonora</h2>
-
-        <div id="buzzer-status">
-            Buzzer desligado
-        </div>
-
-        <div class="buzzer-buttons">
-
-            <button
-                    id="buzzer-on"
-                    class="button button-on">
-                ACIONAR BUZZER
-            </button>
-
-            <button
-                    id="buzzer-off"
-                    class="button button-off">
-                PARAR BUZZER
-            </button>
-
-        </div>
-
-    </section>
-
-    <div id="connection">
-        ● Conectando ao ESP32...
+        <span class="pill on" id="system-pill">Sistema online</span>
     </div>
 
+    <section class="grid-2">
+        <div class="card stat">
+            <h2>Bateria</h2>
+            <div class="big"><span id="battery">--</span><small>%</small></div>
+            <div class="bar-wrap">
+                <div class="bar"><i id="battery-bar"></i></div>
+                <span class="bar-label" id="battery-label">--</span>
+            </div>
+            <p class="sub">Carga do equipamento</p>
+        </div>
+
+        <div class="card stat">
+            <h2>Capacete</h2>
+            <span class="pill on corner" id="helmet-pill">Detectado</span>
+            <div class="big text" id="helmet">---</div>
+            <p class="sub" id="helmet-sub">Equipamento detectado</p>
+        </div>
+    </section>
+
+    <section class="grid-2">
+        <div class="card">
+            <div class="sensor-head"><h2>Acelerômetro</h2><span class="sub">m/s²</span></div>
+            <div class="axes">
+                <div class="axis"><span>EIXO X</span><strong id="accel-x">--</strong></div>
+                <div class="axis"><span>EIXO Y</span><strong id="accel-y">--</strong></div>
+                <div class="axis"><span>EIXO Z</span><strong id="accel-z">--</strong></div>
+            </div>
+            <p class="note">Leitura instantânea nos três eixos</p>
+        </div>
+
+        <div class="card">
+            <div class="sensor-head"><h2>Giroscópio</h2><span class="sub">rad/s</span></div>
+            <div class="axes">
+                <div class="axis"><span>EIXO X</span><strong id="gyro-x">--</strong></div>
+                <div class="axis"><span>EIXO Y</span><strong id="gyro-y">--</strong></div>
+                <div class="axis"><span>EIXO Z</span><strong id="gyro-z">--</strong></div>
+            </div>
+            <p class="note">Leitura instantânea nos três eixos</p>
+        </div>
+    </section>
+
+    <section class="card alarm">
+        <div>
+            <h2>Alarme sonoro</h2>
+            <div id="buzzer-status">Buzzer desligado</div>
+            <p>Acione o sinal sonoro do equipamento quando necessário.</p>
+        </div>
+        <div class="btns">
+            <button id="buzzer-on" class="btn primary">Acionar buzzer</button>
+            <button id="buzzer-off" class="btn">Parar buzzer</button>
+        </div>
+    </section>
+
+    <div class="statusbar">
+        <span id="connection">Conectando ao ESP32...</span>
+        <span id="last-read">Última leitura: --</span>
+    </div>
 </main>
 
+<footer><div><span>EPI Inteligente &nbsp;/&nbsp; Monitoramento local</span><span>Segurança começa com informação.</span></div></footer>
+
 <script src="/script.js"></script>
-
 </body>
-
 </html>
-
