@@ -9,6 +9,8 @@
 #include "models/EmergencyProfile.h"
 #include "sensors/Mpu6050Sensor.h"
 #include "safety/FallDetector.h"
+#include "network/WebServerManager.h"
+#include "models/SystemStatus.h"
 
 // Buzzer
 constexpr int BUZZER_PIN = 23;
@@ -46,6 +48,39 @@ bool mpuReady = false;
 
 unsigned long lastSensorRead = 0;
 constexpr unsigned long SENSOR_INTERVAL = 20;
+
+WebServerManager webServer;
+bool webServerReady = false;
+const char* WIFI_SSID = "Oi_7C96";
+const char* WIFI_PASSWORD = "A4vP6PEQ";
+
+SystemStatus systemStatus;
+
+void updateSystemStatus() {
+
+    switch (fallDetector.getState()) {
+
+        case FallState::NORMAL:
+            systemStatus.fallState = "NORMAL";
+            systemStatus.emergency = false;
+            systemStatus.buzzerActive = false;
+            break;
+
+        case FallState::WAITING_IMMOBILITY:
+            systemStatus.fallState = "WAITING_IMMOBILITY";
+            systemStatus.emergency = false;
+            systemStatus.buzzerActive = false;
+            break;
+
+        case FallState::ALERT:
+            systemStatus.fallState = "ALERT";
+            systemStatus.emergency = true;
+            systemStatus.buzzerActive = true;
+            break;
+    }
+
+    systemStatus.battery = simulatedBattery;
+}
 
 
 void setup() {
@@ -88,17 +123,24 @@ void setup() {
         Serial.println("Falha ao inicializar sensor!");
     }
 
+    systemStatus.sensorReady = mpuReady;
+
     // Exibe primeira página do perfil.
     if (oledReady && emergencyMode) {
         oled.showEmergencyPage(profile, currentPage);
     }
 
     Serial.println();
+    Serial.println("[WEB] Iniciando servidor...");
+
+    webServerReady = webServer.begin(WIFI_SSID, WIFI_PASSWORD);
+
     Serial.println("Sistema inicializado!");
 }
 
 
 void loop() {
+
     alerts.update();
 
     unsigned long now = millis();
@@ -125,8 +167,19 @@ void loop() {
         Mpu6050Data sensorData;
 
         if (mpuSensor.readData(sensorData)) {
+            systemStatus.sensorData = sensorData;
+            systemStatus.sensorReady = true;
+
             fallDetector.update(sensorData);
         }
     }
+    updateSystemStatus();
+
+    if (webServerReady) {
+        webServer.updateStatus(systemStatus);
+        webServer.handleClient();
+    }
 }
+
+
 

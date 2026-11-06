@@ -26,13 +26,37 @@ function updateBattery(level) {
     label.textContent = text;
 }
 
-function updateHelmet(on) {
-    byId("helmet").textContent = on ? "Em uso" : "Removido";
-    byId("helmet-sub").textContent = on ? "Equipamento detectado" : "Equipamento não detectado";
-    const pill = byId("helmet-pill");
-    pill.textContent = on ? "Detectado" : "Não detectado";
-    pill.classList.toggle("on", on);
-    pill.classList.toggle("off", !on);
+function updateFallState(state) {
+    const pill = byId("fall-pill");
+
+    switch (state) {
+        case "NORMAL":
+            byId("fall-state").textContent = "Normal";
+            byId("fall-sub").textContent = "Nenhuma queda detectada";
+            pill.textContent = "Monitorando";
+            pill.className = "pill on corner";
+            break;
+
+        case "WAITING_IMMOBILITY":
+            byId("fall-state").textContent = "Possível queda";
+            byId("fall-sub").textContent = "Aguardando confirmação de imobilidade";
+            pill.textContent = "Em análise";
+            pill.className = "pill off corner";
+            break;
+
+        case "ALERT":
+            byId("fall-state").textContent = "Emergência";
+            byId("fall-sub").textContent = "Queda confirmada — alerta acionado";
+            pill.textContent = "Alerta ativo";
+            pill.className = "pill off corner";
+            break;
+
+        default:
+            byId("fall-state").textContent = "Desconhecido";
+            byId("fall-sub").textContent = "Estado não identificado";
+            pill.textContent = "Indisponível";
+            pill.className = "pill off corner";
+    }
 }
 
 function updateBuzzerStatus(ativo) {
@@ -52,7 +76,7 @@ async function updateDashboard() {
         const data = await response.json();
 
         updateBattery(data.battery);
-        updateHelmet(Boolean(data.helmet));
+        updateFallState(data.fallState);
         ["x", "y", "z"].forEach((a) => {
             byId("accel-" + a).textContent = fmt(data.accelerometer[a]);
             byId("gyro-" + a).textContent = fmt(data.gyroscope[a]);
