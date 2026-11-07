@@ -679,3 +679,47 @@ footer div {
         transition: none !important
     }
 }
+
+[hidden] {
+    display: none !important;
+}
+
+.profile-view {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.profile-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+    margin-top: 28px;
+}
+
+.profile-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.profile-field span {
+    color: #888;
+    font-size: 13px;
+}
+
+.profile-field strong {
+    overflow-wrap: anywhere;
+}
+
+.btn.danger {
+    background: #c0392b;
+    color: white;
+    border: none;
+}
+
+@media (max-width: 600px) {
+    .profile-grid {
+        grid-template-columns: 1fr;
+    }
+}

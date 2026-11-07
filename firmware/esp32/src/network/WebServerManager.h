@@ -6,6 +6,8 @@
 #include <WebServer.h>
 #include <LittleFS.h>
 #include "../models/SystemStatus.h"
+#include "../storage/EmployeeProfileStorage.h"
+#include "../safety/AlertManager.h"
 
 class WebServerManager {
 private:
@@ -15,8 +17,14 @@ private:
 
     void configureRoutes();
 
+    EmployeeProfileStorage profileStorage;
+
+    AlertManager& alertManager;
+
+
+
 public:
-    WebServerManager();
+    explicit WebServerManager(AlertManager& alertManager);
 
     bool begin(const char* ssid, const char* password);
     void handleClient();

@@ -11,6 +11,7 @@
 #include "safety/FallDetector.h"
 #include "network/WebServerManager.h"
 #include "models/SystemStatus.h"
+#include "storage/EmployeeProfileStorage.h"
 
 // Buzzer
 constexpr int BUZZER_PIN = 23;
@@ -25,6 +26,8 @@ OledDisplay oled(Wire);
 
 // Perfil de emergência
 EmergencyProfile profile;
+EmployeeProfileStorage profileStorage;
+
 int currentPage = 0;
 
 unsigned long lastPageChange = 0;
@@ -49,7 +52,7 @@ bool mpuReady = false;
 unsigned long lastSensorRead = 0;
 constexpr unsigned long SENSOR_INTERVAL = 20;
 
-WebServerManager webServer;
+WebServerManager webServer(alerts);
 bool webServerReady = false;
 const char* WIFI_SSID = "Oi_7C96";
 const char* WIFI_PASSWORD = "A4vP6PEQ";
@@ -90,27 +93,17 @@ void setup() {
     Serial.println();
     Serial.println("Inicializando sistema...");
 
-    // Inicializa buzzer sem acionar o alarme.
     buzzer.begin();
 
-    // Inicializa OLED.
     oledReady = oled.begin(OLED_SDA, OLED_SCL);
 
     if (oledReady) {
         Serial.println("OLED inicializado!");
+        oled.showBattery(simulatedBattery);
     } else {
         Serial.println("Erro ao inicializar OLED!");
     }
 
-    // Perfil de emergência.
-    profile.name = "Joao da Silva";
-    profile.blood = "O+";
-    profile.contactName = "Maria";
-    profile.contactPhone = "41999999999";
-    profile.allergies = "Dipirona";
-    profile.observations = "Diabetes";
-
-    // Inicializa o sensor.
     Serial.println();
     Serial.println("Inicializando sensor ICM-20689...");
 
@@ -125,7 +118,6 @@ void setup() {
 
     systemStatus.sensorReady = mpuReady;
 
-    // Exibe primeira página do perfil.
     if (oledReady && emergencyMode) {
         oled.showEmergencyPage(profile, currentPage);
     }
@@ -134,6 +126,14 @@ void setup() {
     Serial.println("[WEB] Iniciando servidor...");
 
     webServerReady = webServer.begin(WIFI_SSID, WIFI_PASSWORD);
+
+    if (webServerReady) {
+        if (profileStorage.load(profile)) {
+            Serial.println("Perfil de emergencia carregado!");
+        } else {
+            Serial.println("Nenhum perfil encontrado ou erro na leitura.");
+        }
+    }
 
     Serial.println("Sistema inicializado!");
 }
@@ -145,7 +145,6 @@ void loop() {
 
     unsigned long now = millis();
 
-    // Atualização independente do OLED.
     if (oledReady && emergencyMode) {
         if (now - lastPageChange >= PAGE_INTERVAL) {
             lastPageChange = now;

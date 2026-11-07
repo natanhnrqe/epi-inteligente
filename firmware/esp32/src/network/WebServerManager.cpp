@@ -1,7 +1,8 @@
 #include "WebServerManager.h"
+#include <ArduinoJson.h>
 
-WebServerManager::WebServerManager()
-    : server(80) {
+WebServerManager::WebServerManager(AlertManager& alertManager)
+    : server(80), alertManager(alertManager) {
 }
 
 bool WebServerManager::begin(const char* ssid, const char* password) {
@@ -69,19 +70,141 @@ void WebServerManager::configureRoutes() {
 
     json += "}";
 
-    server.on("/", HTTP_GET, [this]() {
-        File file = LittleFS.open("/index.html", "r");
 
-        if (!file) {
-            server.send(404, "text/plain", "index.html nao encontrado");
+    // GET /api/funcionario
+    server.on("/api/funcionario", HTTP_GET, [this]() {
+        if (!profileStorage.exists()) {
+            server.send(404, "application/json",
+                        "{\"message\":\"Perfil nao encontrado\"}");
             return;
         }
 
-        server.streamFile(file, "text/html");
-        file.close();
+        EmergencyProfile profile;
+
+        if (!profileStorage.load(profile)) {
+            server.send(500, "application/json",
+                        "{\"message\":\"Erro ao carregar perfil\"}");
+            return;
+        }
+
+        JsonDocument doc;
+
+        doc["nome"] = profile.name;
+        doc["contato_nome"] = profile.contactName;
+        doc["contato_telefone"] = profile.contactPhone;
+        doc["tipo_sanguineo"] = profile.blood;
+        doc["alergias"] = profile.allergies;
+        doc["observacoes"] = profile.observations;
+
+        String response;
+        serializeJson(doc, response);
+
+        server.sendHeader("Cache-Control", "no-store");
+        server.send(200, "application/json", response);
     });
 
-    server.serveStatic("/", LittleFS, "/");
+    // POST /api/funcionario
+    server.on("/api/funcionario", HTTP_POST, [this]() {
+        if (profileStorage.exists()) {
+            server.send(409, "application/json",
+                        "{\"message\":\"Este capacete ja possui um perfil\"}");
+            return;
+        }
+
+        JsonDocument doc;
+
+        DeserializationError error =
+            deserializeJson(doc, server.arg("plain"));
+
+        if (error) {
+            server.send(400, "application/json",
+                        "{\"message\":\"JSON invalido\"}");
+            return;
+        }
+
+        EmergencyProfile profile;
+
+        profile.name = doc["nome"] | "";
+        profile.contactName = doc["contato_nome"] | "";
+        profile.contactPhone = doc["contato_telefone"] | "";
+        profile.blood = doc["tipo_sanguineo"] | "";
+        profile.allergies = doc["alergias"] | "";
+        profile.observations = doc["observacoes"] | "";
+
+        // Validação no próprio ESP32.
+        if (profile.name.length() < 3 ||
+            profile.contactName.length() < 2 ||
+            profile.contactPhone.length() < 10) {
+            server.send(400, "application/json",
+                        "{\"message\":\"Dados obrigatorios invalidos\"}");
+            return;
+        }
+
+        if (!profileStorage.save(profile)) {
+            server.send(500, "application/json",
+                        "{\"message\":\"Erro ao salvar perfil\"}");
+            return;
+        }
+
+        server.send(201, "application/json",
+                    "{\"message\":\"Perfil cadastrado com sucesso\"}");
+    });
+
+    // DELETE /api/funcionario
+    server.on("/api/funcionario", HTTP_DELETE, [this]() {
+        if (!profileStorage.exists()) {
+            server.send(404, "application/json",
+                        "{\"message\":\"Perfil nao encontrado\"}");
+            return;
+        }
+
+        if (!profileStorage.remove()) {
+            server.send(500, "application/json",
+                        "{\"message\":\"Erro ao excluir perfil\"}");
+            return;
+        }
+
+        server.send(200, "application/json",
+                    "{\"message\":\"Perfil excluido com sucesso\"}");
+    });
+
+        // POST /api/buzzer/on
+server.on("/api/buzzer/on", HTTP_POST, [this]() {
+    alertManager.attentionAlert();
+
+    server.send(
+        200,
+        "application/json",
+        "{\"message\":\"Buzzer acionado\"}"
+    );
+});
+
+// POST /api/buzzer/off
+server.on("/api/buzzer/off", HTTP_POST, [this]() {
+    alertManager.stop();
+
+    server.send(
+        200,
+        "application/json",
+        "{\"message\":\"Buzzer desligado\"}"
+    );
+});
+
+
+
+ server.on("/", HTTP_GET, [this]() {
+     File file = LittleFS.open("/index.html", FILE_READ);
+
+     if (!file) {
+         server.send(404, "text/plain", "index.html nao encontrado");
+         return;
+     }
+     server.streamFile(file, "text/html");
+     file.close();
+ });
+
+
+ server.serveStatic("/", LittleFS, "/");
 
     server.onNotFound([this]() {
         server.send(404, "text/plain", "Rota nao encontrada");

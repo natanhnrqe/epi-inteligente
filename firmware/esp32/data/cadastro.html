@@ -33,7 +33,7 @@
         <p class="hint">* Campos obrigatórios</p>
     </div>
 
-    <div class="form-layout">
+    <div class="form-layout" id="profile-form-view">
         <form class="card" id="employee-form" novalidate>
             <div class="fieldset">
                 <div class="section-title"><i>01</i><h2>Dados do funcionário</h2></div>
@@ -108,6 +108,54 @@
             </div>
         </aside>
     </div>
+
+    <section class="card profile-view" id="profile-view" hidden>
+        <div class="section-title">
+            <i>01</i>
+            <h2>Perfil cadastrado</h2>
+        </div>
+
+        <p class="hint">Este capacete já possui um funcionário vinculado.</p>
+
+        <div class="profile-grid">
+            <div class="profile-field">
+                <span>Nome completo</span>
+                <strong id="profile-nome"></strong>
+            </div>
+
+            <div class="profile-field">
+                <span>Contato de emergência</span>
+                <strong id="profile-contato-nome"></strong>
+            </div>
+
+            <div class="profile-field">
+                <span>Telefone</span>
+                <strong id="profile-contato-telefone"></strong>
+            </div>
+
+            <div class="profile-field">
+                <span>Tipo sanguíneo</span>
+                <strong id="profile-tipo-sanguineo"></strong>
+            </div>
+
+            <div class="profile-field">
+                <span>Alergias</span>
+                <strong id="profile-alergias"></strong>
+            </div>
+
+            <div class="profile-field">
+                <span>Observações</span>
+                <strong id="profile-observacoes"></strong>
+            </div>
+        </div>
+
+        <div class="form-foot">
+            <span class="hint" id="profile-msg">Perfil armazenado no capacete.</span>
+            <button type="button" class="btn danger" id="btn-delete">
+                Excluir perfil
+            </button>
+        </div>
+    </section>
 </main>
 
 <footer><div><span>EPI Inteligente &nbsp;/&nbsp; Perfil de emergência</span><span>Segurança começa com informação.</span></div></footer>
