@@ -12,9 +12,10 @@ O sistema utiliza um microcontrolador ESP32 conectado a um sensor inercial (acel
 
 | Nome Completo | RA |
 |---|---|
-| (preencher) | (preencher) |
-| (preencher) | (preencher) |
-| (preencher) | (preencher) |
+| Natan Henrique Ramos Silva | Desenvolvedor Firmware/Software |
+| Ingrid Barbosa Silva | Modelagem 3D & Design Estrutural |
+| João Emanuel Cardoso da Rosa | Gestão de Qualidade & Documentação |
+| Pedro Henrique Heerdt Sehnem Wicheral | Líder de Hardware e Prototipação |
 
 ---
 
