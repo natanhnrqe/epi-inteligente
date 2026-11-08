@@ -33,7 +33,7 @@ int currentPage = 0;
 unsigned long lastPageChange = 0;
 constexpr unsigned long PAGE_INTERVAL = 3000;
 
-bool emergencyMode = true;
+bool emergencyMode = false;
 bool oledReady = false;
 
 int simulatedBattery = 100;
@@ -54,8 +54,8 @@ constexpr unsigned long SENSOR_INTERVAL = 20;
 
 WebServerManager webServer(alerts);
 bool webServerReady = false;
-const char* WIFI_SSID = "Oi_7C96";
-const char* WIFI_PASSWORD = "A4vP6PEQ";
+const char* WIFI_SSID = "nome da rede aqui";
+const char* WIFI_PASSWORD = "senha aqui";
 
 SystemStatus systemStatus;
 
@@ -67,18 +67,21 @@ void updateSystemStatus() {
             systemStatus.fallState = "NORMAL";
             systemStatus.emergency = false;
             systemStatus.buzzerActive = false;
+            emergencyMode = false;
             break;
 
         case FallState::WAITING_IMMOBILITY:
             systemStatus.fallState = "WAITING_IMMOBILITY";
             systemStatus.emergency = false;
             systemStatus.buzzerActive = false;
+            emergencyMode = false;
             break;
 
         case FallState::ALERT:
             systemStatus.fallState = "ALERT";
             systemStatus.emergency = true;
             systemStatus.buzzerActive = true;
+            emergencyMode = true;
             break;
     }
 
@@ -118,10 +121,6 @@ void setup() {
 
     systemStatus.sensorReady = mpuReady;
 
-    if (oledReady && emergencyMode) {
-        oled.showEmergencyPage(profile, currentPage);
-    }
-
     Serial.println();
     Serial.println("[WEB] Iniciando servidor...");
 
@@ -157,6 +156,8 @@ void loop() {
 
             oled.showEmergencyPage(profile, currentPage);
         }
+    } else if (oledReady && !emergencyMode) {
+        oled.showBattery(simulatedBattery);
     }
 
 
