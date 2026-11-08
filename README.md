@@ -218,6 +218,26 @@ A pagina de cadastro do funcionario pode ser acessada pelo menu de navegacao do 
 
 ---
 
+## Testes Automatizados
+
+Os testes em `firmware/esp32/test/` usam o ambiente `esp32test` do PlatformIO. Eles incluem verificacoes que dependem do hardware real, como sensor ICM-20689, display OLED e buzzer.
+
+Com o ESP32 e os componentes conectados conforme a pinagem deste documento, execute a partir de `firmware/esp32/`:
+
+```sh
+pio test -e esp32test
+```
+
+Para apenas compilar o firmware de teste, sem enviar ou executar os testes no dispositivo:
+
+```sh
+pio test -e esp32test --without-uploading --without-testing
+```
+
+O teste do detector usa esperas reais para validar a janela de imobilidade; por isso, a execucao completa leva alguns segundos. Os testes do OLED verificam a inicializacao e exercitam o desenho das telas, mas nao validam visualmente os pixels exibidos.
+
+---
+
 ## Estrutura do Codigo-Fonte
 
 O firmware esta organizado em modulos dentro de firmware/esp32/src/:
