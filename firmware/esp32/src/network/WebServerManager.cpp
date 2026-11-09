@@ -1,5 +1,9 @@
 #include "WebServerManager.h"
+
 #include <ArduinoJson.h>
+#include <time.h>
+
+#include "../logging/SystemLogger.h"
 
 WebServerManager::WebServerManager(AlertManager& alertManager)
     : server(80), alertManager(alertManager) {
@@ -7,83 +11,96 @@ WebServerManager::WebServerManager(AlertManager& alertManager)
 
 bool WebServerManager::begin(const char* ssid, const char* password) {
 
+    // Inicializa o sistema de arquivos.
     if (!LittleFS.begin(false)) {
-        Serial.println("Erro ao inicializar LittleFS!");
+        Serial.println("ERRO: Falha ao inicializar LittleFS!");
         return false;
     }
 
+    SystemLogger::begin();
+
+    SystemLogger::info("Sistema de arquivos inicializado");
+
+    // Inicializa Wi-Fi sem bloquear a inicialização do restante do sistema.
     WiFi.mode(WIFI_STA);
+    WiFi.setAutoReconnect(true);
     WiFi.begin(ssid, password);
 
-    Serial.print("Conectando ao Wi-Fi");
+    wifiStartTime = millis();
+    lastReconnectAttempt = millis();
 
-    unsigned long startAttempt = millis();
+    SystemLogger::info("Conexao Wi-Fi iniciada");
 
-    while (WiFi.status() != WL_CONNECTED &&
-           millis() - startAttempt < 15000) {
-        delay(250);
-        Serial.print(".");
-           }
-
-    Serial.println();
-
-    if (WiFi.status() != WL_CONNECTED) {
-        Serial.println("Falha na conexão Wi-Fi!");
-        return false;
-    }
-
+    // Registra todas as rotas.
     configureRoutes();
 
+    // Inicia o servidor mesmo que o Wi-Fi ainda não tenha conectado.
     server.begin();
 
-    Serial.println("Servidor HTTP iniciado!");
-    Serial.print("Acesse: http://");
-    Serial.println(getIpAddress());
+    SystemLogger::info("Servidor HTTP iniciado na porta 80");
 
     return true;
 }
 
 void WebServerManager::configureRoutes() {
 
+    // GET /api/status
     server.on("/api/status", HTTP_GET, [this]() {
 
-    String json = "{";
+        JsonDocument doc;
 
-    json += "\"battery\":" + String(status.battery) + ",";
+        doc["battery"] = status.battery;
+        doc["sensorReady"] = status.sensorReady;
 
-    json += "\"accelerometer\":{";
-    json += "\"x\":" + String(status.sensorData.accelerationX, 2) + ",";
-    json += "\"y\":" + String(status.sensorData.accelerationY, 2) + ",";
-    json += "\"z\":" + String(status.sensorData.accelerationZ, 2);
-    json += "},";
+        JsonObject accelerometer =
+            doc["accelerometer"].to<JsonObject>();
 
-    json += "\"gyroscope\":{";
-    json += "\"x\":" + String(status.sensorData.gyroscopeX, 2) + ",";
-    json += "\"y\":" + String(status.sensorData.gyroscopeY, 2) + ",";
-    json += "\"z\":" + String(status.sensorData.gyroscopeZ, 2);
-    json += "},";
+        accelerometer["x"] = status.sensorData.accelerationX;
+        accelerometer["y"] = status.sensorData.accelerationY;
+        accelerometer["z"] = status.sensorData.accelerationZ;
 
-    json += "\"buzzer\":" + String(status.buzzerActive ? "true" : "false") + ",";
-    json += "\"fallState\":\"" + status.fallState + "\",";
-    json += "\"emergency\":" + String(status.emergency ? "true" : "false") + ",";
-    json += "\"temperature\":" + String(status.sensorData.temperature, 2);
+        JsonObject gyroscope =
+            doc["gyroscope"].to<JsonObject>();
 
-    json += "}";
+        gyroscope["x"] = status.sensorData.gyroscopeX;
+        gyroscope["y"] = status.sensorData.gyroscopeY;
+        gyroscope["z"] = status.sensorData.gyroscopeZ;
+
+        doc["buzzer"] = status.buzzerActive;
+        doc["fallState"] = status.fallState;
+        doc["emergency"] = status.emergency;
+        doc["temperature"] = status.sensorData.temperature;
+
+        String response;
+        serializeJson(doc, response);
+
+        server.sendHeader("Cache-Control", "no-store");
+        server.send(200, "application/json", response);
+    });
 
 
     // GET /api/funcionario
     server.on("/api/funcionario", HTTP_GET, [this]() {
+
         if (!profileStorage.exists()) {
-            server.send(404, "application/json",
-                        "{\"message\":\"Perfil nao encontrado\"}");
+            server.send(
+                404,
+                "application/json",
+                "{\"message\":\"Perfil nao encontrado\"}"
+            );
             return;
         }
 
         EmergencyProfile profile;
 
         if (!profileStorage.load(profile)) {
-            server.send(500, "application/json",
-                        "{\"message\":\"Erro ao carregar perfil\"}");
+            SystemLogger::error("Falha ao carregar perfil");
+
+            server.send(
+                500,
+                "application/json",
+                "{\"message\":\"Erro ao carregar perfil\"}"
+            );
             return;
         }
 
@@ -103,11 +120,16 @@ void WebServerManager::configureRoutes() {
         server.send(200, "application/json", response);
     });
 
+
     // POST /api/funcionario
     server.on("/api/funcionario", HTTP_POST, [this]() {
+
         if (profileStorage.exists()) {
-            server.send(409, "application/json",
-                        "{\"message\":\"Este capacete ja possui um perfil\"}");
+            server.send(
+                409,
+                "application/json",
+                "{\"message\":\"Este capacete ja possui um perfil\"}"
+            );
             return;
         }
 
@@ -117,8 +139,13 @@ void WebServerManager::configureRoutes() {
             deserializeJson(doc, server.arg("plain"));
 
         if (error) {
-            server.send(400, "application/json",
-                        "{\"message\":\"JSON invalido\"}");
+            SystemLogger::warn("Recebido JSON invalido no cadastro");
+
+            server.send(
+                400,
+                "application/json",
+                "{\"message\":\"JSON invalido\"}"
+            );
             return;
         }
 
@@ -131,92 +158,242 @@ void WebServerManager::configureRoutes() {
         profile.allergies = doc["alergias"] | "";
         profile.observations = doc["observacoes"] | "";
 
-        // Validação no próprio ESP32.
         if (profile.name.length() < 3 ||
             profile.contactName.length() < 2 ||
             profile.contactPhone.length() < 10) {
-            server.send(400, "application/json",
-                        "{\"message\":\"Dados obrigatorios invalidos\"}");
+
+            SystemLogger::warn("Dados obrigatorios do perfil invalidos");
+
+            server.send(
+                400,
+                "application/json",
+                "{\"message\":\"Dados obrigatorios invalidos\"}"
+            );
             return;
         }
 
         if (!profileStorage.save(profile)) {
-            server.send(500, "application/json",
-                        "{\"message\":\"Erro ao salvar perfil\"}");
+            SystemLogger::error("Falha ao salvar perfil");
+
+            server.send(
+                500,
+                "application/json",
+                "{\"message\":\"Erro ao salvar perfil\"}"
+            );
             return;
         }
 
-        server.send(201, "application/json",
-                    "{\"message\":\"Perfil cadastrado com sucesso\"}");
+        SystemLogger::info("Perfil do funcionario cadastrado");
+
+        server.send(
+            201,
+            "application/json",
+            "{\"message\":\"Perfil cadastrado com sucesso\"}"
+        );
     });
+
 
     // DELETE /api/funcionario
     server.on("/api/funcionario", HTTP_DELETE, [this]() {
+
         if (!profileStorage.exists()) {
-            server.send(404, "application/json",
-                        "{\"message\":\"Perfil nao encontrado\"}");
+            server.send(
+                404,
+                "application/json",
+                "{\"message\":\"Perfil nao encontrado\"}"
+            );
             return;
         }
 
         if (!profileStorage.remove()) {
-            server.send(500, "application/json",
-                        "{\"message\":\"Erro ao excluir perfil\"}");
+            SystemLogger::error("Falha ao excluir perfil");
+
+            server.send(
+                500,
+                "application/json",
+                "{\"message\":\"Erro ao excluir perfil\"}"
+            );
             return;
         }
 
-        server.send(200, "application/json",
-                    "{\"message\":\"Perfil excluido com sucesso\"}");
+        SystemLogger::info("Perfil do funcionario removido");
+
+        server.send(
+            200,
+            "application/json",
+            "{\"message\":\"Perfil excluido com sucesso\"}"
+        );
     });
 
-        // POST /api/buzzer/on
-server.on("/api/buzzer/on", HTTP_POST, [this]() {
-    alertManager.attentionAlert();
 
-    server.send(
-        200,
-        "application/json",
-        "{\"message\":\"Buzzer acionado\"}"
-    );
-});
+    // POST /api/buzzer/on
+    server.on("/api/buzzer/on", HTTP_POST, [this]() {
 
-// POST /api/buzzer/off
-server.on("/api/buzzer/off", HTTP_POST, [this]() {
-    alertManager.stop();
+        alertManager.attentionAlert();
 
-    server.send(
-        200,
-        "application/json",
-        "{\"message\":\"Buzzer desligado\"}"
-    );
-});
+        SystemLogger::info("Comando recebido: acionar buzzer");
+
+        server.send(
+            200,
+            "application/json",
+            "{\"message\":\"Buzzer acionado\"}"
+        );
+    });
 
 
+    // POST /api/buzzer/off
+    server.on("/api/buzzer/off", HTTP_POST, [this]() {
 
- server.on("/", HTTP_GET, [this]() {
-     File file = LittleFS.open("/index.html", FILE_READ);
+        alertManager.stop();
 
-     if (!file) {
-         server.send(404, "text/plain", "index.html nao encontrado");
-         return;
-     }
-     server.streamFile(file, "text/html");
-     file.close();
- });
+        SystemLogger::warn("Comando recebido: desligar buzzer");
+
+        server.send(
+            200,
+            "application/json",
+            "{\"message\":\"Buzzer desligado\"}"
+        );
+    });
 
 
- server.serveStatic("/", LittleFS, "/");
+    // GET /api/logs
+    server.on("/api/logs", HTTP_GET, [this]() {
 
+        File file = LittleFS.open("/system.log", FILE_READ);
+
+        if (!file) {
+            server.send(
+                404,
+                "text/plain",
+                "Arquivo de log nao encontrado"
+            );
+            return;
+        }
+
+        server.sendHeader("Cache-Control", "no-store");
+        server.streamFile(file, "text/plain");
+        file.close();
+    });
+
+
+    // Página inicial
+    server.on("/", HTTP_GET, [this]() {
+
+        File file = LittleFS.open("/index.html", FILE_READ);
+
+        if (!file) {
+            server.send(
+                404,
+                "text/plain",
+                "index.html nao encontrado"
+            );
+            return;
+        }
+
+        server.streamFile(file, "text/html");
+        file.close();
+    });
+
+
+    // Arquivos estáticos
+    server.serveStatic("/", LittleFS, "/");
+
+
+    // Rota inexistente
     server.onNotFound([this]() {
         server.send(404, "text/plain", "Rota nao encontrada");
     });
-
-    server.sendHeader("Cache-Control", "no-store");
-    server.send(200, "application/json", json);
-});
 }
 
 void WebServerManager::handleClient() {
+
     server.handleClient();
+
+    updateWifiConnection();
+}
+
+void WebServerManager::updateWifiConnection() {
+
+    unsigned long now = millis();
+
+    bool connected = WiFi.status() == WL_CONNECTED;
+
+    // Detecta uma conexão nova ou uma reconexão.
+    if (connected && !wasWifiConnected) {
+
+        wasWifiConnected = true;
+        connectionTimeoutLogged = false;
+
+        SystemLogger::info("Wi-Fi conectado");
+
+        printNetworkInfo();
+
+        // Horário de Brasília: UTC-3.
+        configTime(
+            -3 * 3600,
+            0,
+            "pool.ntp.org",
+            "time.nist.gov"
+        );
+    }
+
+    // Detecta perda de conexão.
+    if (!connected && wasWifiConnected) {
+
+        wasWifiConnected = false;
+
+        SystemLogger::warn("Conexao Wi-Fi perdida");
+    }
+
+    // Registra falha inicial de conexão após 15 segundos.
+    if (!connected &&
+        !connectionTimeoutLogged &&
+        now - wifiStartTime >= CONNECTION_TIMEOUT) {
+
+        connectionTimeoutLogged = true;
+
+        SystemLogger::error(
+            "Tempo limite excedido ao conectar ao Wi-Fi"
+        );
+    }
+
+    // Solicita reconexão sem bloquear o loop.
+    if (!connected &&
+        now - lastReconnectAttempt >= RECONNECT_INTERVAL) {
+
+        lastReconnectAttempt = now;
+
+        WiFi.reconnect();
+    }
+
+    // Verifica se o horário já foi sincronizado.
+    if (connected && !timeSynchronized) {
+
+        time_t currentTime = time(nullptr);
+
+        if (currentTime >= 1700000000) {
+
+            timeSynchronized = true;
+
+            SystemLogger::info("Horario sincronizado via NTP");
+        }
+    }
+}
+
+void WebServerManager::printNetworkInfo() const {
+
+    Serial.println();
+    Serial.println("========== REDE ESP32 ==========");
+
+    Serial.print("IP: ");
+    Serial.println(WiFi.localIP());
+
+    Serial.print("MAC: ");
+    Serial.println(WiFi.macAddress());
+
+    Serial.println("Status: CONECTADO");
+    Serial.println("================================");
+    Serial.println();
 }
 
 String WebServerManager::getIpAddress() const {
