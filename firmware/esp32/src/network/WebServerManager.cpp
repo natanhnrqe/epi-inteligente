@@ -2,6 +2,7 @@
 
 #include <ArduinoJson.h>
 #include <time.h>
+#include "esp_partition.h"
 
 #include "../logging/SystemLogger.h"
 
@@ -21,8 +22,14 @@ bool WebServerManager::begin(
     const char* password
 ) {
 
+
     // Inicializa o sistema de arquivos.
-    if (!LittleFS.begin(false)) {
+    if (!LittleFS.begin(
+         false,
+         "/littlefs",
+         10,
+         "spiffs"
+     )){
         Serial.println("ERRO: Falha ao inicializar LittleFS!");
         return false;
     }
