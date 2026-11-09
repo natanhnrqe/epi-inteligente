@@ -222,7 +222,22 @@ A pagina de cadastro do funcionario pode ser acessada pelo menu de navegacao do 
 
 ## Video Demonstrativo / Screenshots
 
-(Esta secao deve ser preenchida com capturas de tela do dashboard funcionando, fotos da montagem do hardware e o link para o video demonstrativo do projeto.)
+**Teste 1: Esp32 Ligado
+https://github.com/user-attachments/assets/a5c501eb-ed74-4942-8a20-35a1782fc362
+
+**Teste 2: Esp32 Conectado à Rede
+https://github.com/user-attachments/assets/700dbf5b-6c1f-46f5-b41f-3e41fd52da96
+
+**Teste 3: Desligamento do Modo de Emergência
+https://github.com/user-attachments/assets/08d41dc1-6129-414a-aeb6-ee199cde7824
+
+**Teste 4: Reset dos Dados do Display
+https://github.com/user-attachments/assets/e50feb9b-506d-487c-abab-8c7d61bc4b92
+
+
+
+
+
 
 ---
 
