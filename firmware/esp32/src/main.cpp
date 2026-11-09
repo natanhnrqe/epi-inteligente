@@ -52,10 +52,10 @@ bool mpuReady = false;
 unsigned long lastSensorRead = 0;
 constexpr unsigned long SENSOR_INTERVAL = 20;
 
-WebServerManager webServer(alerts);
+WebServerManager webServer(alerts, fallDetector);
 bool webServerReady = false;
-const char* WIFI_SSID = "nome da rede aqui";
-const char* WIFI_PASSWORD = "senha aqui";
+const char* WIFI_SSID = "WICHERAL 2.4 G";
+const char* WIFI_PASSWORD = "#312418Jig";
 
 SystemStatus systemStatus;
 
@@ -180,6 +180,5 @@ void loop() {
         webServer.handleClient();
     }
 }
-
 
 

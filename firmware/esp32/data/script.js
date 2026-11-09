@@ -77,6 +77,7 @@ async function updateDashboard() {
 
         updateBattery(data.battery);
         updateFallState(data.fallState);
+        byId("emergency-reset").disabled = !data.emergency;
         ["x", "y", "z"].forEach((a) => {
             byId("accel-" + a).textContent = fmt(data.accelerometer[a]);
             byId("gyro-" + a).textContent = fmt(data.gyroscope[a]);
@@ -103,8 +104,24 @@ async function setBuzzer(on) {
     }
 }
 
+async function resetEmergency() {
+    if (!window.confirm("Deseja encerrar o alerta e rearmar o detector de queda?")) {
+        return;
+    }
+
+    try {
+        const response = await fetch("/api/emergency/reset", {method: "POST"});
+        if (!response.ok) throw new Error("Erro ao resetar a emergência");
+        await updateDashboard();
+    } catch (error) {
+        console.error(error);
+        alert("Não foi possível resetar a emergência.");
+    }
+}
+
 byId("buzzer-on").addEventListener("click", () => setBuzzer(true));
 byId("buzzer-off").addEventListener("click", () => setBuzzer(false));
+byId("emergency-reset").addEventListener("click", resetEmergency);
 
 updateDashboard();
 setInterval(updateDashboard, 1000);

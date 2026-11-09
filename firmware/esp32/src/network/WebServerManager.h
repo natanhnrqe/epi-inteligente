@@ -8,6 +8,7 @@
 #include "../models/SystemStatus.h"
 #include "../storage/EmployeeProfileStorage.h"
 #include "../safety/AlertManager.h"
+#include "../safety/FallDetector.h"
 
 class WebServerManager {
 private:
@@ -20,11 +21,10 @@ private:
     EmployeeProfileStorage profileStorage;
 
     AlertManager& alertManager;
-
-
+    FallDetector& fallDetector;
 
 public:
-    explicit WebServerManager(AlertManager& alertManager);
+    WebServerManager(AlertManager& alertManager, FallDetector& fallDetector);
 
     bool begin(const char* ssid, const char* password);
     void handleClient();

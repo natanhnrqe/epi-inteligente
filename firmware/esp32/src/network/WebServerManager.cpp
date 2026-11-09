@@ -1,8 +1,13 @@
 #include "WebServerManager.h"
 #include <ArduinoJson.h>
 
-WebServerManager::WebServerManager(AlertManager& alertManager)
-    : server(80), alertManager(alertManager) {
+WebServerManager::WebServerManager(
+    AlertManager& alertManager,
+    FallDetector& fallDetector
+)
+    : server(80),
+      alertManager(alertManager),
+      fallDetector(fallDetector) {
 }
 
 bool WebServerManager::begin(const char* ssid, const char* password) {
@@ -70,6 +75,17 @@ void WebServerManager::configureRoutes() {
 
     json += "}";
 
+    server.sendHeader("Cache-Control", "no-store");
+    server.send(200, "application/json", json);
+    });
+
+    // POST /api/emergency/reset
+    server.on("/api/emergency/reset", HTTP_POST, [this]() {
+        fallDetector.reset();
+
+        server.send(200, "application/json",
+                    "{\"message\":\"Emergencia reiniciada\"}");
+    });
 
     // GET /api/funcionario
     server.on("/api/funcionario", HTTP_GET, [this]() {
@@ -209,10 +225,6 @@ server.on("/api/buzzer/off", HTTP_POST, [this]() {
     server.onNotFound([this]() {
         server.send(404, "text/plain", "Rota nao encontrada");
     });
-
-    server.sendHeader("Cache-Control", "no-store");
-    server.send(200, "application/json", json);
-});
 }
 
 void WebServerManager::handleClient() {

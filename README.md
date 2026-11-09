@@ -132,6 +132,10 @@ Aciona o buzzer remotamente. Nao requer corpo na requisicao. Retorna confirmacao
 
 Desliga o buzzer remotamente. Nao requer corpo na requisicao. Retorna confirmacao em JSON.
 
+### POST /api/emergency/reset
+
+Rearma o detector de queda e desliga o buzzer de emergencia. O loop do ESP32 atualiza o estado do sistema e volta a exibir a bateria no OLED. Nao requer corpo na requisicao.
+
 ### GET /
 
 Serve a pagina principal do dashboard (index.html) armazenada no LittleFS.
