@@ -52,7 +52,7 @@ bool mpuReady = false;
 unsigned long lastSensorRead = 0;
 constexpr unsigned long SENSOR_INTERVAL = 20;
 
-WebServerManager webServer(alerts, fallDetector);
+WebServerManager webServer(alerts, fallDetector, profile);
 bool webServerReady = false;
 const char* WIFI_SSID = "WICHERAL 2.4 G";
 const char* WIFI_PASSWORD = "#312418Jig";
@@ -178,7 +178,13 @@ void loop() {
     if (webServerReady) {
         webServer.updateStatus(systemStatus);
         webServer.handleClient();
+
+        if (webServer.consumeProfileDisplayRefreshRequest() &&
+            oledReady && emergencyMode) {
+            currentPage = 0;
+            oled.showEmergencyPage(profile, currentPage);
+            lastPageChange = millis();
+        }
     }
 }
-
 

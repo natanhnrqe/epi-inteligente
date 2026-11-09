@@ -134,7 +134,11 @@ Desliga o buzzer remotamente. Nao requer corpo na requisicao. Retorna confirmaca
 
 ### POST /api/emergency/reset
 
-Rearma o detector de queda e desliga o buzzer de emergencia. O loop do ESP32 atualiza o estado do sistema e volta a exibir a bateria no OLED. Nao requer corpo na requisicao.
+Rearma o detector de queda e desliga o buzzer de emergencia. O cadastro do funcionario é mantido. O loop do ESP32 atualiza o estado do sistema e volta a exibir a bateria no OLED. Nao requer corpo na requisicao.
+
+### POST /api/funcionario/refresh-display
+
+Recarrega na memoria do ESP32 o perfil armazenado para uso no OLED. O perfil so e exibido enquanto o modo de emergencia estiver ativo. Nao altera nem exclui o cadastro.
 
 ### GET /
 

@@ -105,7 +105,9 @@ async function setBuzzer(on) {
 }
 
 async function resetEmergency() {
-    if (!window.confirm("Deseja encerrar o alerta e rearmar o detector de queda?")) {
+    if (!window.confirm(
+        "Deseja encerrar o alerta e rearmar o detector? O cadastro do funcionário será mantido."
+    )) {
         return;
     }
 

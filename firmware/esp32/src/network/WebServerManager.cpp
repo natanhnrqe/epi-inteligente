@@ -3,11 +3,13 @@
 
 WebServerManager::WebServerManager(
     AlertManager& alertManager,
-    FallDetector& fallDetector
+    FallDetector& fallDetector,
+    EmergencyProfile& emergencyProfile
 )
     : server(80),
       alertManager(alertManager),
-      fallDetector(fallDetector) {
+      fallDetector(fallDetector),
+      emergencyProfile(emergencyProfile) {
 }
 
 bool WebServerManager::begin(const char* ssid, const char* password) {
@@ -162,8 +164,34 @@ void WebServerManager::configureRoutes() {
             return;
         }
 
+        emergencyProfile = profile;
+        profileDisplayRefreshRequested = true;
+
         server.send(201, "application/json",
                     "{\"message\":\"Perfil cadastrado com sucesso\"}");
+    });
+
+    // POST /api/funcionario/refresh-display
+    server.on("/api/funcionario/refresh-display", HTTP_POST, [this]() {
+        if (!profileStorage.exists()) {
+            server.send(404, "application/json",
+                        "{\"message\":\"Perfil nao encontrado\"}");
+            return;
+        }
+
+        EmergencyProfile updatedProfile;
+
+        if (!profileStorage.load(updatedProfile)) {
+            server.send(500, "application/json",
+                        "{\"message\":\"Erro ao carregar perfil\"}");
+            return;
+        }
+
+        emergencyProfile = updatedProfile;
+        profileDisplayRefreshRequested = true;
+
+        server.send(200, "application/json",
+                    "{\"message\":\"Perfil do display atualizado\"}");
     });
 
     // DELETE /api/funcionario
@@ -179,6 +207,9 @@ void WebServerManager::configureRoutes() {
                         "{\"message\":\"Erro ao excluir perfil\"}");
             return;
         }
+
+        emergencyProfile = EmergencyProfile{};
+        profileDisplayRefreshRequested = true;
 
         server.send(200, "application/json",
                     "{\"message\":\"Perfil excluido com sucesso\"}");
@@ -237,4 +268,10 @@ String WebServerManager::getIpAddress() const {
 
 void WebServerManager::updateStatus(const SystemStatus& newStatus) {
     status = newStatus;
+}
+
+bool WebServerManager::consumeProfileDisplayRefreshRequest() {
+    const bool requested = profileDisplayRefreshRequested;
+    profileDisplayRefreshRequested = false;
+    return requested;
 }

@@ -22,13 +22,20 @@ private:
 
     AlertManager& alertManager;
     FallDetector& fallDetector;
+    EmergencyProfile& emergencyProfile;
+    bool profileDisplayRefreshRequested = false;
 
 public:
-    WebServerManager(AlertManager& alertManager, FallDetector& fallDetector);
+    WebServerManager(
+        AlertManager& alertManager,
+        FallDetector& fallDetector,
+        EmergencyProfile& emergencyProfile
+    );
 
     bool begin(const char* ssid, const char* password);
     void handleClient();
     void updateStatus(const SystemStatus& newStatus);
+    bool consumeProfileDisplayRefreshRequest();
 
     String getIpAddress() const;
 };
