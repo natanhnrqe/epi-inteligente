@@ -206,6 +206,31 @@ byId("btn-delete").addEventListener("click", async () => {
     }
 });
 
+byId("btn-refresh-display").addEventListener("click", async () => {
+    const button = byId("btn-refresh-display");
+    const profileMsg = byId("profile-msg");
+
+    button.disabled = true;
+    profileMsg.textContent = "Atualizando os dados do display...";
+
+    try {
+        const response = await fetch("/api/funcionario/refresh-display", {
+            method: "POST"
+        });
+
+        if (!response.ok) {
+            throw new Error("Não foi possível atualizar os dados do display.");
+        }
+
+        profileMsg.textContent = "Dados atualizados. O OLED os exibirá durante uma emergência.";
+    } catch (error) {
+        console.error(error);
+        profileMsg.textContent = "Não foi possível atualizar os dados do display.";
+    } finally {
+        button.disabled = false;
+    }
+});
+
 // Verifica se existe perfil ao abrir a página.
 loadProfile();
 

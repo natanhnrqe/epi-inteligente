@@ -34,7 +34,7 @@ int currentPage = 0;
 unsigned long lastPageChange = 0;
 constexpr unsigned long PAGE_INTERVAL = 3000;
 
-bool emergencyMode = true;
+bool emergencyMode = false;
 bool oledReady = false;
 
 int simulatedBattery = 100;
@@ -53,10 +53,10 @@ bool mpuReady = false;
 unsigned long lastSensorRead = 0;
 constexpr unsigned long SENSOR_INTERVAL = 20;
 
-WebServerManager webServer(alerts);
+WebServerManager webServer(alerts, fallDetector, profile);
 bool webServerReady = false;
-const char* WIFI_SSID = "Oi_7C96";
-const char* WIFI_PASSWORD = "A4vP6PEQ";
+const char* WIFI_SSID = "WICHERAL 2.4 G";
+const char* WIFI_PASSWORD = "#312418Jig";
 
 SystemStatus systemStatus;
 
@@ -68,18 +68,21 @@ void updateSystemStatus() {
             systemStatus.fallState = "NORMAL";
             systemStatus.emergency = false;
             systemStatus.buzzerActive = false;
+            emergencyMode = false;
             break;
 
         case FallState::WAITING_IMMOBILITY:
             systemStatus.fallState = "WAITING_IMMOBILITY";
             systemStatus.emergency = false;
             systemStatus.buzzerActive = false;
+            emergencyMode = false;
             break;
 
         case FallState::ALERT:
             systemStatus.fallState = "ALERT";
             systemStatus.emergency = true;
             systemStatus.buzzerActive = true;
+            emergencyMode = true;
             break;
     }
 
@@ -180,6 +183,8 @@ void loop() {
 
             oled.showEmergencyPage(profile, currentPage);
         }
+    } else if (oledReady && !emergencyMode) {
+        oled.showBattery(simulatedBattery);
     }
 
 
@@ -200,8 +205,13 @@ void loop() {
     if (webServerReady) {
         webServer.updateStatus(systemStatus);
         webServer.handleClient();
+
+        if (webServer.consumeProfileDisplayRefreshRequest() &&
+            oledReady && emergencyMode) {
+            currentPage = 0;
+            oled.showEmergencyPage(profile, currentPage);
+            lastPageChange = millis();
+        }
     }
 }
-
-
 
