@@ -12,6 +12,7 @@
 #include "network/WebServerManager.h"
 #include "models/SystemStatus.h"
 #include "storage/EmployeeProfileStorage.h"
+#include "logging/SystemLogger.h"
 
 // Buzzer
 constexpr int BUZZER_PIN = 23;
@@ -114,9 +115,14 @@ void setup() {
 
     if (mpuReady) {
         Serial.println("Sensor inicializado com sucesso!");
-        Serial.println("tempo,accX,accY,accZ,gyroX,gyroY,gyroZ,temperatura,magnitude");
+        Serial.println(
+            "tempo,accX,accY,accZ,gyroX,gyroY,gyroZ,temperatura,magnitude"
+        );
+
+        SystemLogger::info("Sensor ICM-20689 inicializado");
     } else {
         Serial.println("Falha ao inicializar sensor!");
+
     }
 
     systemStatus.sensorReady = mpuReady;
@@ -126,14 +132,35 @@ void setup() {
 
     webServerReady = webServer.begin(WIFI_SSID, WIFI_PASSWORD);
 
-    if (webServerReady) {
+    if (!webServerReady) {
+        Serial.println("Falha ao inicializar servidor ou LittleFS!");
+    } else {
+        SystemLogger::info("Servidor e armazenamento inicializados");
+
+
         if (profileStorage.load(profile)) {
+            SystemLogger::info("Perfil de emergencia carregado");
+
             Serial.println("Perfil de emergencia carregado!");
         } else {
-            Serial.println("Nenhum perfil encontrado ou erro na leitura.");
+            SystemLogger::warn(
+                "Nenhum perfil encontrado ou erro na leitura"
+            );
+
+            Serial.println(
+                "Nenhum perfil encontrado ou erro na leitura."
+            );
         }
     }
 
+
+    if (oledReady && emergencyMode) {
+        oled.showEmergencyPage(profile, currentPage);
+    }
+
+    SystemLogger::info("Sistema inicializado");
+
+    Serial.println();
     Serial.println("Sistema inicializado!");
 }
 
