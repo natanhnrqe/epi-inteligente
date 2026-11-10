@@ -234,8 +234,7 @@ https://github.com/user-attachments/assets/08d41dc1-6129-414a-aeb6-ee199cde7824
 **Teste 4: Reset dos Dados do Display
 https://github.com/user-attachments/assets/e50feb9b-506d-487c-abab-8c7d61bc4b92
 
-
-
+**Teste 5: Testes Automatizados de Conexão e Funcionamento de Componentes 
 
 
 
