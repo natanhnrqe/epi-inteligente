@@ -236,6 +236,9 @@ https://github.com/user-attachments/assets/e50feb9b-506d-487c-abab-8c7d61bc4b92
 
 **Teste 5: Testes Automatizados de Conexão e Funcionamento de Componentes 
 
+https://github.com/user-attachments/assets/99f6b883-14fd-4520-a7be-73198f82ecaa
+
+
 
 
 ---
